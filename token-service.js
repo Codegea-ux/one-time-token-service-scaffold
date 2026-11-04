@@ -29,7 +29,13 @@ const keyFor = (id) => "token:" + id;
  */
 export async function issueToken(payload, ttlSeconds) {
   // TODO: implement
-  throw new Error("issueToken not implemented");
+
+  const id = crypto.randomBytes(16).toString("hex");
+  const value = JSON.stringify(payload);
+
+  await redis.set(keyFor(id), value, "EX", ttlSeconds, "NX");
+
+  return id;
 }
 
 /**
@@ -48,7 +54,17 @@ export async function issueToken(payload, ttlSeconds) {
  */
 export async function consumeToken(tokenId) {
   // TODO: implement
-  throw new Error("consumeToken not implemented");
+
+  const value = await redis.getdel(keyFor(tokenId));
+
+  if (value === null) {
+    return { ok: false, reason: "invalid" };
+  }
+
+  return {
+    ok: true,
+    payload: JSON.parse(value)
+  };
 }
 
 // Allow other files to close the connection cleanly (used by test.js).
